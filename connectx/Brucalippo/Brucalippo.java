@@ -35,11 +35,11 @@ public class Brucalippo implements CXPlayer {
         if (first) {
             this.myWin = CXGameState.WINP1;
         } else{
-            this.yourWin = CXGameState.WINP2;
+            this.myWin = CXGameState.WINP2;
         }
 
         if (first) {
-            this.myWin = CXGameState.WINP2;
+            this.yourWin = CXGameState.WINP2;
         } else{
             this.yourWin = CXGameState.WINP1;
         }
@@ -47,11 +47,11 @@ public class Brucalippo implements CXPlayer {
         if (first) {
             this.myPiece = CXCellState.P1;
         } else{
-            this.yourPiece = CXCellState.P2;
+            this.myPiece = CXCellState.P2;
         }
 
         if (first) {
-            this.myPiece = CXCellState.P2;
+            this.yourPiece = CXCellState.P2;
         } else{
             this.yourPiece = CXCellState.P1;
         }
@@ -136,7 +136,7 @@ public class Brucalippo implements CXPlayer {
 
     private long evaluateBoard(CXBoard B, CXCellState player) {
         int score = 0;
-
+        
         // Evaluate horizzontally
         for (int i = 0; i < B.M; i++) {
             for (int j = 0; j <= B.N - X; j++) {
