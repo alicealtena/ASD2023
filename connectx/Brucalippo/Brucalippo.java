@@ -172,7 +172,7 @@ public class Brucalippo implements CXPlayer {
         }
 
         // Evaluate diagonally (right to left) 
-        for (int i = 0; i <= B.N - X; i++) {
+        for (int i = 0; i <= B.M - X; i++) {
             for (int j = X - 1; j < B.N; j++) {
                 int consecutiveCount = 0;
                 for (int k = 0; k < X; k++) {
