@@ -65,7 +65,10 @@ public class Brucalippo implements CXPlayer {
         Time_End = false;
         START = System.currentTimeMillis();
 
-        if (B.numOfMarkedCells() <= 1) return N/2; //The strongest move for the first turn is always the middle column
+        //The strongest move for the first turn is always the middle column
+        if (B.numOfMarkedCells() <= 1) {
+            return N/2; 
+        }
 
         IterativeDeepening(B, 10);
         return this.BestMove;
@@ -77,14 +80,16 @@ public class Brucalippo implements CXPlayer {
     }
 
     private Long AlphaBeta(CXBoard B, int depth, long alpha, long beta, boolean maximizingPlayer){
-        if (depth == 0 || B.gameState() != CXGameState.OPEN) {
+        if (depth == 0 || B.gameState() != CXGameState.OPEN || Time_End) {
             // Evaluate the board position and return the heuristic value
             return evaluateBoard(B, maximizingPlayer ? myPiece : yourPiece); 
         }
 
+        List<Integer> legalMoves = getLegalMoves(B);
+
         if (maximizingPlayer) {
             long value = Long.MIN_VALUE;
-            for (int move : getLegalMoves(B)) {
+            for (int move : legalMoves) {
                 CXBoard newBoard = B.copy();
                 // Make the move
                 newBoard.markColumn(move);
@@ -99,9 +104,9 @@ public class Brucalippo implements CXPlayer {
                 }
             }
             return value;
-        } else {
+        } else { // Minimizing player
             long value = Long.MAX_VALUE;
-            for (int move : getLegalMoves(B)) {
+            for (int move : legalMoves) {
                 CXBoard newBoard = B.copy();
                 // Make the move 
                 newBoard.markColumn(move);
@@ -199,13 +204,36 @@ public class Brucalippo implements CXPlayer {
         }
     }
 
-    private void IterativeDeepening(CXBoard B, int depth){
+    /*private void IterativeDeepening(CXBoard B, int depth){
         Long alpha = Long.MIN_VALUE;
         Long beta = Long.MAX_VALUE;
 
-        for (int d = 1; d < depth; d++){
+        for (int d = 1; d <= depth; d++){
             if(Time_End) break;
-            AlphaBeta(B, depth, alpha, beta, true);
+            long alphaBetaResult = AlphaBeta(B, d, alpha, beta, true);
+
+            if (alphaBetaResult > alpha) {
+                alpha = alphaBetaResult;
+                this.BestMove = getBestMove(B);
+            }
         }
+    }*/
+    private void IterativeDeepening(CXBoard B, int depth) {
+        Long alpha = Long.MIN_VALUE;
+        Long beta = Long.MAX_VALUE;
+        int prev;
+        this.BestMove = getBestMove(B);
+
+        for(int d = 1; d <= depth; d++){
+            if(Time_End) break;
+            prev = this.BestMove; //Save the best move we found considering the previous maximum depth
+            AlphaBeta(B, d, alpha, beta, true);
+            if(Time_End) this.BestMove = prev; //If we timed out with depth = d we couldn't establish a reliable best move, so we use the previous one
+        }
+    }
+
+    private int getBestMove(CXBoard B) {
+        List<Integer> legalMoves = getLegalMoves(B);
+        return legalMoves.get(rand.nextInt(legalMoves.size()));
     }
 }
