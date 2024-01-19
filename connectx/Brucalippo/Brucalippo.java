@@ -65,6 +65,8 @@ public class Brucalippo implements CXPlayer {
         Time_End = false;
         START = System.currentTimeMillis();
 
+        Integer[] L = B.getAvailableColumns();
+
         //The strongest move for the first turn is always the middle column
         if (B.numOfMarkedCells() <= 1) {
             return N/2; 
@@ -142,16 +144,6 @@ public class Brucalippo implements CXPlayer {
         }
     }
 
-    private List<Integer> getLegalMoves(CXBoard B) {
-        List<Integer> legalMoves = new ArrayList<>();
-        for (int col = 0; col < N; col++) {
-            if (!B.fullColumn(col)) {
-                legalMoves.add(col);
-            }
-        }
-        return legalMoves;
-    }
-
     private long evaluateBoard(CXBoard B, int depth) {
         if (B.gameState() != CXGameState.OPEN) {
             if (B.gameState() == myWin) {
@@ -167,22 +159,35 @@ public class Brucalippo implements CXPlayer {
         CXCellState[] columnA = new CXCellState[M];
         CXCellState[] rowA = new CXCellState[N];
         CXCellState[] diagonalA = new CXCellState[X];
+        boolean[] isEmpty = new boolean[M];
         Long score = 0L;
         
         // Evaluate vertically
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < M - (X - 1); j++) {
                 columnA[j] = board[j][i];
-                
-                score += calculateScore(columnA, j, j + X);
+                if (columnA[j] != CXCellState.FREE) {
+                    isEmpty[j] = false;
+                }
+                if (columnA[M-1] == CXCellState.FREE) {
+                    continue;
+                }
+                for (int r = 0; r < M - (X - 1); r++) {
+                    if (columnA[r+X-1] == CXCellState.FREE) {
+                        continue;
+                    }
+                    score += calculateScore(columnA, j, j + X);
+                }
             }
         }
 
         // Evaluate horizzontally
         for (int j = 0; j < M; j++) {
+            if (isEmpty[j] == true) {
+                continue;
+            }
+            rowA = board[j];
             for (int i = 0; i < N - (X - 1); i++) {
-                rowA = board[j];
-                
                 score += calculateScore(rowA, i, i + X);
             }
         }
@@ -242,21 +247,6 @@ public class Brucalippo implements CXPlayer {
     }
 
 
-
-    /*private void IterativeDeepening(CXBoard B, int depth){
-        Long alpha = Long.MIN_VALUE;
-        Long beta = Long.MAX_VALUE;
-
-        for (int d = 1; d <= depth; d++){
-            if(Time_End) break;
-            long alphaBetaResult = AlphaBeta(B, d, alpha, beta, true);
-
-            if (alphaBetaResult > alpha) {
-                alpha = alphaBetaResult;
-                this.BestMove = getBestMove(B);
-            }
-        }
-    }*/
     private void IterativeDeepening(CXBoard B, int maxDepth) {
         Long alpha = Long.MIN_VALUE;
         Long beta = Long.MAX_VALUE;
