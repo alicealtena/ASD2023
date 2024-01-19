@@ -79,24 +79,35 @@ public class Brucalippo implements CXPlayer {
         return "Brucalippo";
     }
 
-    private Long AlphaBeta(CXBoard B, int depth, long alpha, long beta, boolean maximizingPlayer){
-        if (depth == 0 || B.gameState() != CXGameState.OPEN || Time_End) {
+    private boolean timeOut() {
+        return ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (95.0 / 100.0));
+    }
+
+    private Long AlphaBeta(CXBoard B, int depthCurrent, int depthMax, long alpha, long beta, boolean maximizingPlayer){
+        if (depthCurrent == 0 || B.gameState() != CXGameState.OPEN || Time_End) {
             // Evaluate the board position and return the heuristic value
-            return evaluateBoard(B, maximizingPlayer ? myPiece : yourPiece); 
+            return evaluateBoard(B, depthCurrent); 
         }
 
-        List<Integer> legalMoves = getLegalMoves(B);
-
         if (maximizingPlayer) {
-            long value = Long.MIN_VALUE;
-            for (int move : legalMoves) {
-                CXBoard newBoard = B.copy();
-                // Make the move
-                newBoard.markColumn(move);
+            long value = Long.MIN_VALUE + 1;
+            Integer[] L = B.getAvailableColumns();
+            for (int i : L) {
+
+                if (timeOut()) {
+                    this.Time_End = true;
+                    return value;
+                }
+
+                B.markColumn(i);
 
                 // Rercusively call AlphaBeta for the child node
-                value = Math.max(value, AlphaBeta(newBoard, depth - 1, alpha, beta, false));
+                value = Math.max(value, AlphaBeta(B, depthCurrent + 1, depthMax, alpha, beta, false));
+                B.unmarkColumn();
+
                 alpha = Math.max(alpha, value);
+
+                
 
                 if (beta <= alpha) {
                     // Beta pruning - prune the remaining branches
@@ -105,14 +116,21 @@ public class Brucalippo implements CXPlayer {
             }
             return value;
         } else { // Minimizing player
-            long value = Long.MAX_VALUE;
-            for (int move : legalMoves) {
-                CXBoard newBoard = B.copy();
-                // Make the move 
-                newBoard.markColumn(move);
+            long value = Long.MAX_VALUE - 1;
+            Integer[] L = B.getAvailableColumns();
+            for (int i : L) {
+
+                if (timeOut()) {
+                    this.Time_End = true;
+                    return value;
+                }
+
+                B.markColumn(i);
 
                 // Recursively call AlphaBeta for the child node
-                value = Math.min(value, AlphaBeta(newBoard, depth - 1, alpha, beta, true));
+                value = Math.min(value, AlphaBeta(B, depthCurrent + 1, depthMax, alpha, beta, true));
+                B.unmarkColumn();
+
                 beta = Math.min(beta, value);
 
                 if (beta <= alpha) {
@@ -134,75 +152,96 @@ public class Brucalippo implements CXPlayer {
         return legalMoves;
     }
 
-    private long evaluateBoard(CXBoard B, CXCellState player) {
-        int score = 0;
-        
-        // Evaluate horizzontally
-        for (int i = 0; i < B.M; i++) {
-            for (int j = 0; j <= B.N - X; j++) {
-                int consecutiveCount = 0;
-                for (int k = 0; k < X; k++) {
-                    if (B.cellState(i, j + k) == player) {
-                        consecutiveCount++;
-                    }
-                }
-                score += calculateScore(consecutiveCount);
+    private long evaluateBoard(CXBoard B, int depth) {
+        if (B.gameState() != CXGameState.OPEN) {
+            if (B.gameState() == myWin) {
+                return Long.MAX_VALUE - 1 - depth;
+            } else if (B.gameState() == yourWin) {
+                return Long.MIN_VALUE + 1 + depth;
+            } else {
+                return 0L;
             }
         }
 
+        CXCellState[][] board = B.getBoard();
+        CXCellState[] columnA = new CXCellState[M];
+        CXCellState[] rowA = new CXCellState[N];
+        CXCellState[] diagonalA = new CXCellState[X];
+        Long score = 0L;
+        
         // Evaluate vertically
-        for (int j = 0; j < B.N; j++) {
-            for (int i = 0; i <= B.M - X; i++) {
-                int consecutiveCount = 0;
-                for (int k = 0; k < X; k++) {
-                    if (B.cellState(i + k, j) == player) {
-                        consecutiveCount++;
-                    }
-                }
-                score += calculateScore(consecutiveCount);
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < M - (X - 1); j++) {
+                columnA[j] = board[j][i];
+                
+                score += calculateScore(columnA, j, j + X);
+            }
+        }
+
+        // Evaluate horizzontally
+        for (int j = 0; j < M; j++) {
+            for (int i = 0; i < N - (X - 1); i++) {
+                rowA = board[j];
+                
+                score += calculateScore(rowA, i, i + X);
             }
         }
 
         // Evaluate diagonally (left to right)
-        for (int i = 0; i <= B.M - X; i++) {
-            for (int j = 0; j <= B.N - X; j++) {
-                int consecutiveCount = 0;
+        for (int i = 0; i < M - (X - 1); i++) {
+            for (int j = 0; j < N - (X - 1); j++) {
                 for (int k = 0; k < X; k++) {
-                    if (B.cellState(i + k, j + k) == player) {
-                        consecutiveCount++;
-                    }
+                    diagonalA[k] = board[i + k][j + k];
                 }
-                score += calculateScore(consecutiveCount);
+                
+                score += calculateScore(diagonalA, 0, X);
             }
         }
 
         // Evaluate diagonally (right to left) 
-        for (int i = 0; i <= B.M - X; i++) {
-            for (int j = X - 1; j < B.N; j++) {
-                int consecutiveCount = 0;
+        for (int i = 0; i < M - (X - 1); i++) {
+            for (int j = 0; j < N - (X - 1); j++) {
                 for (int k = 0; k < X; k++) {
-                    if (B.cellState(i + k, j - k) == player) {
-                        consecutiveCount++;
-                    }
+                    diagonalA[k] = board[i + (X -1) - k][j + k];
                 }
-                score += calculateScore(consecutiveCount);
+                
+                score += calculateScore(diagonalA, 0, X);
             }
         }
 
         return score;
     }
 
-    private int calculateScore(int consecutiveCount) {
-        if (consecutiveCount == X) {
-            return 100;
-        } else if (consecutiveCount == X - 1) {
-            return 10;
-        } else if (consecutiveCount >= 2) {
-            return 1;
-        } else {
-            return 0;
+    private Long calculateScore(CXCellState arr[], int start, int end) {
+        int countMine = 0;
+        int countEmpty = 0;
+        int countYours = 0;
+
+        Long score = 0L; 
+
+        for (int i = start; i < end; i++) {
+            if (arr[i] == myPiece) {
+                countMine++;
+            } else if (arr[i] == CXCellState.FREE) {
+                countEmpty++;
+            } else {
+                countYours++;
+            }
         }
+
+        score += (countEmpty - countYours);
+
+        if (countYours == 0) {
+            score *= (long) Math.pow(2, countMine);
+        }
+        if (countMine == 0) {
+            score *= (long) Math.pow(2, countYours);
+        }
+
+        return score;
     }
+
+
 
     /*private void IterativeDeepening(CXBoard B, int depth){
         Long alpha = Long.MIN_VALUE;
@@ -218,22 +257,17 @@ public class Brucalippo implements CXPlayer {
             }
         }
     }*/
-    private void IterativeDeepening(CXBoard B, int depth) {
+    private void IterativeDeepening(CXBoard B, int maxDepth) {
         Long alpha = Long.MIN_VALUE;
         Long beta = Long.MAX_VALUE;
         int prev;
-        this.BestMove = getBestMove(B);
+        this.BestMove = - 1;
 
-        for(int d = 1; d <= depth; d++){
+        for(int d = 1; d <= maxDepth; d++){
             if(Time_End) break;
             prev = this.BestMove; //Save the best move we found considering the previous maximum depth
-            AlphaBeta(B, d, alpha, beta, true);
+            AlphaBeta(B, 0, d, alpha, beta, true);
             if(Time_End) this.BestMove = prev; //If we timed out with depth = d we couldn't establish a reliable best move, so we use the previous one
         }
-    }
-
-    private int getBestMove(CXBoard B) {
-        List<Integer> legalMoves = getLegalMoves(B);
-        return legalMoves.get(rand.nextInt(legalMoves.size()));
     }
 }
