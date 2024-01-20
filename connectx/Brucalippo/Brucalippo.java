@@ -33,7 +33,7 @@ public class Brucalippo implements CXPlayer {
     if (B.numOfMarkedCells() <= 1) {
         return N/2; 
     }
-    
+
     // Use iterative deepening to find the best move
     return iterativeDeepening(B);
   }
@@ -62,7 +62,7 @@ public class Brucalippo implements CXPlayer {
         for (Integer m : B.getAvailableColumns()) {
           
           B.markColumn(m); // Try making the move
-          eval = alphabeta(B, true, -1, 1, d); // Evaluate the resulting board position using alpha-beta pruning
+          eval = alphabeta(B, false, -1, 1, d); // Evaluate the resulting board position using alpha-beta pruning
           B.unmarkColumn(); // Undo the move
 
           // Update the best move if the current move has a higher evaluation
@@ -97,7 +97,7 @@ public class Brucalippo implements CXPlayer {
       for (Integer c : ac) {
         B.markColumn(c);
         // Recursively evaluate the resulting position for the minimizing player
-        eval = Integer.max(eval, alphabeta(B, !maximize, alpha, beta, depth - 1));
+        eval = Integer.max(eval, alphabeta(B, false, alpha, beta, depth - 1));
         B.unmarkColumn();
         alpha = Integer.max(eval, alpha); // Update alpha
         if (beta <= alpha) break; // Perform alpha-beta pruning if necessary
@@ -109,7 +109,7 @@ public class Brucalippo implements CXPlayer {
       for (Integer c : ac) {
         B.markColumn(c);
         // Recursively evaluate the resulting position for the maximizing player
-        eval = Integer.min(eval, alphabeta(B, maximize, alpha, beta, depth - 1));
+        eval = Integer.min(eval, alphabeta(B, true, alpha, beta, depth - 1));
         B.unmarkColumn();
         beta = Integer.min(eval, beta); // Update beta
         if (beta <= alpha) break; // Perform alpha-beta pruning if necessary
