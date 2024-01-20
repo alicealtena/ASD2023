@@ -105,16 +105,6 @@ public class L1 implements CXPlayer {
    *
    * Returns a blocking column if there is one, otherwise a random one
    * 
-   * Crea un insieme T di tutti gli indici delle colonne sicure, 
-   * nel primo "for" marca una colonna con indice i,
-   * nel secondo "for" si comporta come se fosse l'altro giocatore
-   * quindi controlla che la colonna L[j] non sia piena e la marca
-   * se dopo averla marcata lo stato del gioco equivale a "yourwin" 
-   * (vittoria dell'avversario) allora rimuove i dalle colonne sicure. 
-   * 
-   * Infine controlla che l'insieme T sia di dimensione maggiore di 0:
-   * se è così sceglie una colonna random tra quelle in T,
-   * altrimenti sceglie una colonna random dall'array originale L.
    */
 	private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
 		TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes

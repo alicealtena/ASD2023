@@ -33,12 +33,7 @@ public class Brucalippo implements CXPlayer {
     if (B.numOfMarkedCells() <= 1) {
         return N/2; 
     }
-    /* try {
-      // controllo simile a L1 se usa checktime()
-    } catch (TimeoutException e) {
-      return B.getAvailableColumns()[0];
-    } */
-
+    
     // Use iterative deepening to find the best move
     return iterativeDeepening(B);
   }
